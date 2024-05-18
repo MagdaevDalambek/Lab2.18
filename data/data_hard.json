@@ -1,17 +1,22 @@
 [
     {
-        "start": "Portugal",
-        "finish": "France",
-        "number": 40
+        "name": "Magdaev D.M.",
+        "group": 1,
+        "grade": "4 4 3 5 4"
     },
     {
-        "start": "Brazil",
-        "finish": "Paris",
-        "number": 87
+        "name": "Ivanov I.I.",
+        "group": 4,
+        "grade": "4 5 4 3 4"
     },
     {
-        "start": "Russia",
-        "finish": "Mexico",
-        "number": 40
+        "name": "Kenesbaev X.",
+        "group": 5,
+        "grade": "3 3 4 3 4"
+    },
+    {
+        "name": "Shams V.",
+        "group": 8,
+        "grade": "5 5 5 5 5"
     }
 ]

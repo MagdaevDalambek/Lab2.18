@@ -4,104 +4,102 @@
 # Для своего варианта лабораторной работы 2.17 добавьте возможность получения имени файла
 # данных, используя соответстсвующую переменную окружения.
 
-import argparse
 import json
+import argparse
 import os.path
 import sys
 from jsonschema import validate, ValidationError
 
 
-def add_route(routes, start, finish, number):
-    """
-    Добавить данные о маршруте
-    """
-    routes.append(
+def add_student(students, name, group, grade):
+    students.append(
         {
-            'start': start,
-            'finish': finish,
-            'number': number
+            'name': name,
+            'group': group,
+            'grade': grade,
         }
     )
-    return routes
+    return students
 
 
-def display_route(routes):
-    """
-    Отобразить список маршрутов
-    """
-    if routes:
+def show_list(students):
+    # Заголовок таблицы.
+    if students:
+
         line = '+-{}-+-{}-+-{}-+-{}-+'.format(
             '-' * 4,
             '-' * 30,
             '-' * 20,
-            '-' * 14
+            '-' * 15
         )
         print(line)
         print(
-            '| {:^4} | {:^30} | {:^20} | {:^14} |'.format(
+            '| {:^4} | {:^30} | {:^20} | {:^15} |'.format(
                 "№",
-                "Начальный пункт",
-                "Конечный пункт",
-                "Номер маршрута"
+                "Ф.И.О.",
+                "Группа",
+                "Успеваемость"
             )
         )
         print(line)
 
-        for idx, worker in enumerate(routes, 1):
+        # Вывести данные о всех студентах.
+        for idx, student in enumerate(students, 1):
             print(
-                '| {:>4} | {:<30} | {:<20} | {:>14} |'.format(
+                '| {:>4} | {:<30} | {:<20} | {:>15} |'.format(
                     idx,
-                    worker.get('start', ''),
-                    worker.get('finish', ''),
-                    worker.get('number', 0)
+                    student.get('name', ''),
+                    student.get('group', ''),
+                    student.get('grade', 0)
                 )
             )
         print(line)
     else:
-        print("Список маршрутов пуст")
+        print("Список студентов пуст.")
 
 
-def select_route(routes, period):
-    """
-    Выбрать маршрут
-    """
+def show_selected(students):
+    # Проверить сведения студентов из списка.
     result = []
-    for employee in routes:
-        if employee.get('number') == period:
-            result.append(employee)
-
+    for student in students:
+        grade = [int(x) for x in (student.get('grade', '').split())]
+        if sum(grade) / max(len(grade), 1) >= 4.0:
+            result.append(student)
     return result
 
 
-def save_routes(file_name, routes):
-    """
-        Сохранить всех работников в файл JSON
-        """
+def help():
+    print("Список команд:\n")
+    print("add - добавить студента;")
+    print("display - вывести список студентов;")
+    print("select - запросить студентов с баллом выше 4.0;")
+    print("save - сохранить список студентов;")
+    print("load - загрузить список студентов;")
+    print("exit - завершить работу с программой.")
+
+
+def save_students(file_name, students):
     with open(file_name, "w", encoding="utf-8") as fout:
-        json.dump(routes, fout, ensure_ascii=False, indent=4)
+        json.dump(students, fout, ensure_ascii=False, indent=4)
 
 
-def load_routes(file_name):
-    """
-        Загрузить данные из файла JSON
-        """
+def load_students(file_name):
     schema = {
         "type": "array",
         "items": {
             "type": "object",
             "properties": {
-                "start": {"type": "string"},
-                "finish": {"type": "string"},
-                "number": {"type": "integer"},
+                "name": {"type": "string"},
+                "group": {"type": "integer"},
+                "grade": {"type": "string"},
             },
             "required": [
-                "start",
-                "finish",
-                "number",
+                "name",
+                "group",
+                "grade",
             ],
         },
     }
-    # Открыть файл с заданным именем и прочитать его содержимое.
     with open(file_name, "r") as file_in:
         data = json.load(file_in)  # Прочитать данные из файла
 
@@ -121,69 +119,75 @@ def main(command_line=None):
         "-d",
         "--data",
         action="store",
-        required=False,
         help="The data file name"
     )
+
     # Создать основной парсер командной строки.
-    parser = argparse.ArgumentParser("routes")
+    parser = argparse.ArgumentParser("students")
     parser.add_argument(
         "--version",
         action="version",
         version="%(prog)s 0.1.0"
     )
+
     subparsers = parser.add_subparsers(dest="command")
-    # Создать субпарсер для добавления маршрута.
+
+    # Создать субпарсер для добавления студента.
     add = subparsers.add_parser(
         "add",
         parents=[file_parser],
-        help="Add a new route"
+        help="Add a new student"
     )
-    add.add_argument(
-        "-s",
-        "--start",
-        action="store",
-        required=True,
-        help="The start of the route"
-    )
-    add.add_argument(
-        "-f",
-        "--finish",
-        action="store",
-        help="The finish of the route"
-    )
+
     add.add_argument(
         "-n",
-        "--number",
+        "--name",
         action="store",
-        type=int,
         required=True,
-        help="The number of the route"
+        help="The student's name"
     )
-    # Создать субпарсер для отображения всех маршрутов.
+
+    add.add_argument(
+        "-g",
+        "--group",
+        type=int,
+        action="store",
+        help="The student's group"
+    )
+
+    add.add_argument(
+        "-gr",
+        "--grade",
+        action="store",
+        required=True,
+        help="The student's grade"
+    )
+
+    # Создать субпарсер для отображения всех студентов.
     _ = subparsers.add_parser(
         "display",
         parents=[file_parser],
-        help="Display all routes"
+        help="Display all students"
     )
-    # Создать субпарсер для выбора маршрута.
+
+    # Создать субпарсер для выбора студентов.
     select = subparsers.add_parser(
         "select",
         parents=[file_parser],
-        help="Select the route"
+        help="Select the students"
     )
+
     select.add_argument(
-        "-N",
-        "--numb",
+        "-s",
+        "--select",
         action="store",
-        type=int,
         required=True,
-        help="The route"
+        help="The required select"
     )
 
     # Выполнить разбор аргументов командной строки.
     args = parser.parse_args(command_line)
 
-    # Загрузить все маршруты из файла, если файл существует.
     data_file = args.data
     if not data_file:
         data_file = os.environ.get("INDIVIDUAL")
@@ -191,35 +195,35 @@ def main(command_line=None):
         print("The data file name is absent", file=sys.stderr)
         sys.exit(1)
 
-    # Загрузить всех работников из файла, если файл существует.
+    # Загрузить всех студентов из файла, если файл существует.
     is_dirty = False
     if os.path.exists(data_file):
-        routes = load_routes(data_file)
+        students = load_students(data_file)
     else:
-        routes = []
+        students = []
 
-    # Добавить маршрут.
+    # Добавить студента.
     if args.command == "add":
-        routes = add_route(
-            routes,
-            args.start,
-            args.finish,
-            args.number
+        students = add_student(
+            students,
+            args.name,
+            args.group,
+            args.grade
         )
         is_dirty = True
 
-    # Отобразить все маршруты.
+    # Отобразить всех студентов.
     elif args.command == "display":
-        display_route(routes)
+        show_list(students)
 
-    # Выбрать требуемые маршруты.
+    # Выбрать требуемых студентов.
     elif args.command == "select":
-        selected = select_route(routes, args.numb)
-        display_route(selected)
+        selected = show_selected(students)
+        show_list(selected)
 
-    # Сохранить данные в файл, если список маршрутов был изменен.
+    # Сохранить данные в файл, если список студентов был изменен.
     if is_dirty:
-        save_routes(data_file, routes)
+        save_students(data_file, students)
 
 
 if __name__ == '__main__':
